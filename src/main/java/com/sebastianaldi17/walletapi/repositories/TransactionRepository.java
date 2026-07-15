@@ -1,0 +1,12 @@
+package com.sebastianaldi17.walletapi.repositories;
+
+import com.sebastianaldi17.walletapi.models.Balance;
+import com.sebastianaldi17.walletapi.models.Transaction;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.UUID;
+
+@Repository
+public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
+}
