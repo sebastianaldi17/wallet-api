@@ -1,4 +1,4 @@
-package com.sebastianaldi17.walletapi.dtos;
+package com.sebastianaldi17.walletapi.dtos.responses;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 @Data
 @AllArgsConstructor
-public class GetBalanceDto {
+public class GetBalanceResponse {
     private BigDecimal available;
     private BigDecimal locked;
 }

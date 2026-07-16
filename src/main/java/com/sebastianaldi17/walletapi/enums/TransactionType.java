@@ -1,4 +1,4 @@
-package com.sebastianaldi17.walletapi.models;
+package com.sebastianaldi17.walletapi.enums;
 
 public enum TransactionType {
     DEPOSIT, WITHDRAWAL, TRANSFER

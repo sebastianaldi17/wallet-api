@@ -1,5 +1,6 @@
 package com.sebastianaldi17.walletapi.models;
 
+import com.sebastianaldi17.walletapi.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.Data;
 
