@@ -12,7 +12,7 @@ import com.sebastianaldi17.walletapi.repositories.AccountRepository;
 import com.sebastianaldi17.walletapi.repositories.BalanceRepository;
 import com.sebastianaldi17.walletapi.repositories.LedgerRepository;
 import com.sebastianaldi17.walletapi.repositories.TransactionRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +33,7 @@ public class TransactionService {
     @Autowired
     private TransactionRepository transactionRepository;
 
-    private final UUID SystemClearingAccount = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private final UUID systemClearingAccount = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     @Transactional
     public CreateDepositResponse createDeposit(CreateDepositDto dto) throws RuntimeException {
@@ -50,7 +50,7 @@ public class TransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("balance not found"));
 
         balance.setAvailable(balance.getAvailable().add(dto.getAmount()));
-        balanceRepository.save(balance);
+        balanceRepository.save(balance); // apparently not needed since @Transactional automatically save at the end, but just for clarity
 
         Transaction newTransaction = new Transaction();
         newTransaction.setAccountId(account.getId());
@@ -66,7 +66,7 @@ public class TransactionService {
         creditLedger.setTransactionId(newTransaction.getId());
         debitLedger.setTransactionId(newTransaction.getId());
 
-        creditLedger.setAccountId(SystemClearingAccount);
+        creditLedger.setAccountId(systemClearingAccount);
         debitLedger.setAccountId(account.getId());
 
         creditLedger.setCredit(dto.getAmount());
