@@ -1,16 +1,12 @@
 package com.sebastianaldi17.walletapi.controllers;
 
-import com.sebastianaldi17.walletapi.dtos.responses.ErrorResponse;
 import com.sebastianaldi17.walletapi.dtos.responses.GetBalanceResponse;
 import com.sebastianaldi17.walletapi.models.Balance;
 import com.sebastianaldi17.walletapi.services.BalanceService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController

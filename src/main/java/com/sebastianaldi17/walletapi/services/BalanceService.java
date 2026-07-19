@@ -5,7 +5,6 @@ import com.sebastianaldi17.walletapi.models.Account;
 import com.sebastianaldi17.walletapi.models.Balance;
 import com.sebastianaldi17.walletapi.repositories.AccountRepository;
 import com.sebastianaldi17.walletapi.repositories.BalanceRepository;
-import com.sebastianaldi17.walletapi.repositories.UserApiKeyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,9 +17,6 @@ public class BalanceService {
 
     @Autowired
     private BalanceRepository balanceRepository;
-
-    @Autowired
-    private UserApiKeyRepository userApiKeyRepository;
 
     public Balance getBalanceByUserId(UUID userId) throws RuntimeException {
         Account account = accountRepository.findOneByOwnerUserId(userId)
