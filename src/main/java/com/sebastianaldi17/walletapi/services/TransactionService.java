@@ -120,8 +120,8 @@ public class TransactionService {
         creditLedger.setTransactionId(newTransaction.getId());
         debitLedger.setTransactionId(newTransaction.getId());
 
-        creditLedger.setAccountId(account.getId());
-        debitLedger.setAccountId(systemClearingAccount);
+        creditLedger.setAccountId(systemClearingAccount);
+        debitLedger.setAccountId(account.getId());
 
         creditLedger.setCredit(dto.getAmount());
         debitLedger.setDebit(dto.getAmount());
