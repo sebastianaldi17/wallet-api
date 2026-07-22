@@ -1,7 +1,10 @@
 package com.sebastianaldi17.walletapi.components;
 
+import com.sebastianaldi17.walletapi.enums.UserRole;
+import com.sebastianaldi17.walletapi.models.User;
 import com.sebastianaldi17.walletapi.models.UserApiKey;
 import com.sebastianaldi17.walletapi.repositories.UserApiKeyRepository;
+import com.sebastianaldi17.walletapi.repositories.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,22 +20,21 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class ApiKeyFilter extends OncePerRequestFilter {
+public class AdminApiKeyFilter extends OncePerRequestFilter {
     private static final String API_KEY_HEADER = "X-API-KEY";
 
     private final UserApiKeyRepository userApiKeyRepository;
+    private final UserRepository userRepository;
 
-    public ApiKeyFilter(UserApiKeyRepository userApiKeyRepository) {
+    public AdminApiKeyFilter(UserApiKeyRepository userApiKeyRepository, UserRepository userRepository) {
         this.userApiKeyRepository = userApiKeyRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-        if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
-            return true;
-        }
-        return path.equals("/users");
+        return !path.startsWith("/admin");
     }
 
     @Override
@@ -53,6 +55,13 @@ public class ApiKeyFilter extends OncePerRequestFilter {
         }
 
         UserApiKey userApiKey = userApiKeyOptional.get();
+
+        Optional<User> user = userRepository.findOneById(userApiKey.getUserId());
+        if(user.isEmpty() || !user.get().getRole().equals(UserRole.ADMIN)) {
+            setUnauthorizedResponse(response);
+            return;
+        }
+
         var authentication = new UsernamePasswordAuthenticationToken(
                 userApiKey.getUserId(), null, List.of()
         );

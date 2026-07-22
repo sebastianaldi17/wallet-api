@@ -1,5 +1,6 @@
 package com.sebastianaldi17.walletapi.configs;
 
+import com.sebastianaldi17.walletapi.components.AdminApiKeyFilter;
 import com.sebastianaldi17.walletapi.components.ApiKeyFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,9 +14,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    private final AdminApiKeyFilter adminApiKeyFilter;
     private final ApiKeyFilter apiKeyFilter;
 
-    public SecurityConfig(ApiKeyFilter apiKeyFilter) {
+    public SecurityConfig(AdminApiKeyFilter adminApiKeyFilter, ApiKeyFilter apiKeyFilter) {
+        this.adminApiKeyFilter = adminApiKeyFilter;
         this.apiKeyFilter = apiKeyFilter;
     }
 
@@ -29,6 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll()
                 )
+                .addFilterBefore(adminApiKeyFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

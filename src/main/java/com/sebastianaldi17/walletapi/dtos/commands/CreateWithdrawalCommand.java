@@ -1,4 +1,4 @@
-package com.sebastianaldi17.walletapi.dtos;
+package com.sebastianaldi17.walletapi.dtos.commands;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Data
 @AllArgsConstructor
-public class CreateDepositDto {
+public class CreateWithdrawalCommand {
     private BigDecimal amount;
     private UUID userId;
     private String idempotencyKey;

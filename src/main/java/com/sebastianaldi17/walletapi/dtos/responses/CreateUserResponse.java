@@ -10,12 +10,9 @@ import java.util.UUID;
 
 @Data
 @AllArgsConstructor
-public class CreateTransferResponse {
-    private BigDecimal amount;
-    private UUID recipientAccountId;
-    private UUID transactionId;
-    private String idempotencyKey;
-    private TransactionType type;
+public class CreateUserResponse {
+    private UUID id;
+    private UUID accountId;
     private String description;
-    private OffsetDateTime createdAt;
+    private String apiKey;
 }

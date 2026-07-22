@@ -5,18 +5,20 @@ import com.sebastianaldi17.walletapi.models.Account;
 import com.sebastianaldi17.walletapi.models.Balance;
 import com.sebastianaldi17.walletapi.repositories.AccountRepository;
 import com.sebastianaldi17.walletapi.repositories.BalanceRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
 public class BalanceService {
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
-    @Autowired
-    private BalanceRepository balanceRepository;
+    private final BalanceRepository balanceRepository;
+
+    public BalanceService(AccountRepository accountRepository, BalanceRepository balanceRepository) {
+        this.accountRepository = accountRepository;
+        this.balanceRepository = balanceRepository;
+    }
 
     public Balance getBalanceByUserId(UUID userId) throws RuntimeException {
         Account account = accountRepository.findOneByOwnerUserId(userId)

@@ -1,8 +1,8 @@
 package com.sebastianaldi17.walletapi.services;
 
-import com.sebastianaldi17.walletapi.dtos.CreateDepositDto;
-import com.sebastianaldi17.walletapi.dtos.CreateTransferDto;
-import com.sebastianaldi17.walletapi.dtos.CreateWithdrawalDto;
+import com.sebastianaldi17.walletapi.dtos.commands.CreateDepositCommand;
+import com.sebastianaldi17.walletapi.dtos.commands.CreateTransferCommand;
+import com.sebastianaldi17.walletapi.dtos.commands.CreateWithdrawalCommand;
 import com.sebastianaldi17.walletapi.dtos.responses.CreateDepositResponse;
 import com.sebastianaldi17.walletapi.dtos.responses.CreateTransferResponse;
 import com.sebastianaldi17.walletapi.dtos.responses.CreateWithdrawalResponse;
@@ -18,37 +18,42 @@ import com.sebastianaldi17.walletapi.repositories.AccountRepository;
 import com.sebastianaldi17.walletapi.repositories.BalanceRepository;
 import com.sebastianaldi17.walletapi.repositories.LedgerRepository;
 import com.sebastianaldi17.walletapi.repositories.TransactionRepository;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class TransactionService {
-    @Autowired
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
+    private final BalanceRepository balanceRepository;
+    private final LedgerRepository ledgerRepository;
+    private final TransactionRepository transactionRepository;
 
-    @Autowired
-    private BalanceRepository balanceRepository;
-
-    @Autowired
-    private LedgerRepository ledgerRepository;
-
-    @Autowired
-    private TransactionRepository transactionRepository;
+    public TransactionService(AccountRepository accountRepository, BalanceRepository balanceRepository, LedgerRepository ledgerRepository, TransactionRepository transactionRepository) {
+        this.accountRepository = accountRepository;
+        this.balanceRepository = balanceRepository;
+        this.ledgerRepository = ledgerRepository;
+        this.transactionRepository = transactionRepository;
+    }
 
     private final UUID systemClearingAccount = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     @Transactional
-    public CreateDepositResponse createDeposit(CreateDepositDto dto) throws RuntimeException {
+    public CreateDepositResponse createDeposit(CreateDepositCommand dto) throws RuntimeException {
         Account account = accountRepository.findOneByOwnerUserId(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("account not found"));
 
         Optional<Transaction> optionalTransaction = transactionRepository.findOneByAccountIdAndIdempotencyKey(account.getId(), dto.getIdempotencyKey());
         if(optionalTransaction.isPresent()) {
-            throw new IdempotencyKeyReuseException("idempotency key already used");
+            Transaction transaction = optionalTransaction.get();
+            if(!transaction.getAmount().equals(dto.getAmount()) || !transaction.getDescription().equals(dto.getDescription()) || !transaction.getType().equals(TransactionType.DEPOSIT)) {
+                throw new IdempotencyKeyReuseException("idempotency key already used");
+            }
+            return new CreateDepositResponse(transaction.getAmount(), transaction.getId(), transaction.getIdempotencyKey(), transaction.getType(), transaction.getDescription(), transaction.getCreatedAt());
         }
 
         Balance balance = balanceRepository.findOneForUpdateByAccountId(account.getId())
@@ -83,17 +88,21 @@ public class TransactionService {
         ledgerRepository.save(creditLedger);
         ledgerRepository.save(debitLedger);
 
-        return new CreateDepositResponse(newTransaction.getAmount(), newTransaction.getIdempotencyKey(), newTransaction.getType(), newTransaction.getDescription(), newTransaction.getCreatedAt());
+        return new CreateDepositResponse(newTransaction.getAmount(), newTransaction.getId(), newTransaction.getIdempotencyKey(), newTransaction.getType(), newTransaction.getDescription(), newTransaction.getCreatedAt());
     }
 
     @Transactional
-    public CreateWithdrawalResponse createWithdrawal(CreateWithdrawalDto dto) throws RuntimeException {
+    public CreateWithdrawalResponse createWithdrawal(CreateWithdrawalCommand dto) throws RuntimeException {
         Account account = accountRepository.findOneByOwnerUserId(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("account not found"));
 
         Optional<Transaction> optionalTransaction = transactionRepository.findOneByAccountIdAndIdempotencyKey(account.getId(), dto.getIdempotencyKey());
         if(optionalTransaction.isPresent()) {
-            throw new IdempotencyKeyReuseException("idempotency key already used");
+            Transaction transaction = optionalTransaction.get();
+            if(!transaction.getAmount().equals(dto.getAmount()) || !transaction.getDescription().equals(dto.getDescription()) || !transaction.getType().equals(TransactionType.WITHDRAWAL)) {
+                throw new IdempotencyKeyReuseException("idempotency key already used");
+            }
+            return new CreateWithdrawalResponse(transaction.getAmount(), transaction.getId(), transaction.getIdempotencyKey(), transaction.getType(), transaction.getDescription(), transaction.getCreatedAt());
         }
 
         Balance balance = balanceRepository.findOneForUpdateByAccountId(account.getId())
@@ -132,17 +141,29 @@ public class TransactionService {
         ledgerRepository.save(creditLedger);
         ledgerRepository.save(debitLedger);
 
-        return new CreateWithdrawalResponse(newTransaction.getAmount(), newTransaction.getIdempotencyKey(), newTransaction.getType(), newTransaction.getDescription(), newTransaction.getCreatedAt());
+        return new CreateWithdrawalResponse(newTransaction.getAmount(), newTransaction.getId(), newTransaction.getIdempotencyKey(), newTransaction.getType(), newTransaction.getDescription(), newTransaction.getCreatedAt());
     }
 
     @Transactional
-    public CreateTransferResponse createTransfer(CreateTransferDto dto) throws RuntimeException {
+    public CreateTransferResponse createTransfer(CreateTransferCommand dto) throws RuntimeException {
         Account account = accountRepository.findOneByOwnerUserId(dto.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("account not found"));
 
         Optional<Transaction> optionalTransaction = transactionRepository.findOneByAccountIdAndIdempotencyKey(account.getId(), dto.getIdempotencyKey());
         if(optionalTransaction.isPresent()) {
-            throw new IdempotencyKeyReuseException("idempotency key already used");
+            Transaction transaction = optionalTransaction.get();
+            if(!transaction.getAmount().equals(dto.getAmount()) || !transaction.getDescription().equals(dto.getDescription()) || !transaction.getType().equals(TransactionType.TRANSFER)) {
+                throw new IdempotencyKeyReuseException("idempotency key already used");
+            }
+
+            // resolve destination account via ledger
+            List<Ledger> ledgers = ledgerRepository.findAllByTransactionId(transaction.getId());
+            for(Ledger ledger: ledgers) {
+                if(!ledger.getAccountId().equals(account.getId()) && !ledger.getAccountId().equals(dto.getRecipientAccountId())) {
+                    throw new IdempotencyKeyReuseException("idempotency key already used");
+                }
+            }
+            return new CreateTransferResponse(transaction.getAmount(), transaction.getAccountId(), transaction.getId(), transaction.getIdempotencyKey(), transaction.getType(), transaction.getDescription(), transaction.getCreatedAt());
         }
 
         Balance balance = balanceRepository.findOneForUpdateByAccountId(account.getId())
@@ -174,8 +195,8 @@ public class TransactionService {
         creditLedger.setTransactionId(newTransaction.getId());
         debitLedger.setTransactionId(newTransaction.getId());
 
-        creditLedger.setAccountId(account.getId());
-        debitLedger.setAccountId(dto.getRecipientAccountId());
+        creditLedger.setAccountId(dto.getRecipientAccountId());
+        debitLedger.setAccountId(account.getId());
 
         creditLedger.setCredit(dto.getAmount());
         debitLedger.setDebit(dto.getAmount());
@@ -186,6 +207,21 @@ public class TransactionService {
         ledgerRepository.save(creditLedger);
         ledgerRepository.save(debitLedger);
 
-        return new CreateTransferResponse(newTransaction.getAmount(), dto.getRecipientAccountId(), newTransaction.getIdempotencyKey(), newTransaction.getType(), newTransaction.getDescription(), newTransaction.getCreatedAt());
+        return new CreateTransferResponse(newTransaction.getAmount(), dto.getRecipientAccountId(), newTransaction.getId(), newTransaction.getIdempotencyKey(), newTransaction.getType(), newTransaction.getDescription(), newTransaction.getCreatedAt());
+    }
+
+    public Transaction getTransactionById(UUID userId, UUID transactionId) throws RuntimeException {
+        Account account = accountRepository.findOneByOwnerUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("account not found"));
+
+        return transactionRepository.findOneByAccountIdAndId(account.getId(), transactionId)
+                .orElseThrow(() -> new ResourceNotFoundException("transaction not found"));
+    }
+
+    public List<Transaction> getTransactionsByUserId(UUID userId, Pageable pageable) throws RuntimeException {
+        Account account = accountRepository.findOneByOwnerUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("account not found"));
+
+        return transactionRepository.findAllByAccountId(account.getId(), pageable);
     }
 }

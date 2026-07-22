@@ -32,7 +32,7 @@ public class Transaction {
     @Column(precision = 20, scale = 8)
     private BigDecimal amount;
 
-    @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
+    @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     @CreationTimestamp
     private OffsetDateTime createdAt;
 }

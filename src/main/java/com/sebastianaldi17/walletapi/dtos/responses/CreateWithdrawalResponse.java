@@ -6,11 +6,13 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 public class CreateWithdrawalResponse {
     private BigDecimal amount;
+    private UUID transactionId;
     private String idempotencyKey;
     private TransactionType type;
     private String description;

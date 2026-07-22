@@ -3,6 +3,7 @@ package com.sebastianaldi17.walletapi.models;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @Entity(name = "balances")
 @Data
+@DynamicInsert
 public class Balance {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

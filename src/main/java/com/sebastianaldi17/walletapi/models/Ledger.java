@@ -32,7 +32,7 @@ public class Ledger {
     @ColumnDefault("0")
     private BigDecimal debit;
 
-    @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE", nullable = false)
+    @Column(name = "created_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     @CreationTimestamp
     private OffsetDateTime createdAt;
 }
